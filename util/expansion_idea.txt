@@ -1,0 +1,170 @@
+# RSS STRUCTURE IMPROVEMENTS
+
+## Goal
+
+Improve the RSS pipeline so headlines stay organized, sources are tracked,
+duplicates are avoided, and the output is easy to feed into an LLM.
+
+---
+
+1. Headline Structure
+
+---
+
+Instead of storing titles, links, dates, and descriptions in separate vectors,
+bundle them into one structure. This prevents index mismatches and keeps the
+data cleaner.
+
+struct Headline {
+std::string title;
+std::string link;
+std::string pubDate;
+std::string description;
+std::string source;
+};
+
+---
+
+2. Main RSS Input Data Structure
+
+---
+
+This stores the URLs being queried, the raw RSS text, parsed headlines,
+and metadata like ticker symbol and success status.
+
+#include <vector>
+#include <string>
+#include <unordered_set>
+
+struct RSSInputData {
+
+```
+// ticker associated with the request
+std::string ticker;
+
+// list of URLs generated for this ticker
+std::vector<std::string> urls;
+
+// raw RSS XML returned from curl
+std::string rssData;
+
+// parsed headlines
+std::vector<Headline> headlines;
+
+// used to avoid duplicate articles across feeds
+std::unordered_set<std::string> seenLinks;
+
+// optional combined text for LLM ingestion
+std::string combinedHeadlines;
+
+// success flag
+bool success = false;
+```
+
+};
+
+---
+
+3. RSS Source Structure
+
+---
+
+Used to generate URLs dynamically.
+
+Example format:
+prefix + ticker + postfix
+
+The needsTicker flag allows mixing search feeds
+(Google News, Bing) with global feeds (Reuters, CNBC).
+
+struct RssSource {
+std::string name;
+std::string prefix;
+std::string postfix;
+bool needsTicker;
+};
+
+---
+
+4. Example RSS Sources
+
+---
+
+std::vector<RssSource> urlSources = {
+
+```
+{"Google News", "https://news.google.com/rss/search?q=", "+stock&hl=en-US&gl=US&ceid=US:en", true},
+{"Seeking Alpha", "https://seekingalpha.com/api/sa/combined/", ".xml", true},
+{"Bing News", "https://www.bing.com/news/search?q=", "+stock&format=rss", true},
+
+{"Google News Earnings", "https://news.google.com/rss/search?q=", "+earnings&hl=en-US&gl=US&ceid=US:en", true},
+{"Google News Analyst", "https://news.google.com/rss/search?q=", "+analyst+rating&hl=en-US&gl=US&ceid=US:en", true},
+
+{"Bing Earnings", "https://www.bing.com/news/search?q=", "+earnings&format=rss", true},
+{"Bing Upgrade", "https://www.bing.com/news/search?q=", "+analyst+upgrade&format=rss", true},
+
+{"Reuters Business", "https://www.reutersagency.com/feed/?best-topics=business-finance&post_type=best", "", false},
+{"CNBC Markets", "https://www.cnbc.com/id/100003114/device/rss/rss.html", "", false},
+{"MarketWatch", "https://feeds.marketwatch.com/marketwatch/topstories/", "", false}
+```
+
+};
+
+---
+
+5. URL Construction Logic
+
+---
+
+std::string url;
+
+if (source.needsTicker)
+url = source.prefix + ticker + source.postfix;
+else
+url = source.prefix;
+
+---
+
+6. Deduplication Example
+
+---
+
+Before adding a headline:
+
+if(task.seenLinks.insert(link).second)
+{
+Headline h;
+h.title = title;
+h.link = link;
+h.pubDate = pubDate;
+h.description = description;
+h.source = sourceName;
+
+```
+task.headlines.push_back(h);
+```
+
+}
+
+---
+
+7. Preparing LLM Input
+
+---
+
+Append headlines into a combined text block while staying under
+~3000 characters.
+
+Example format:
+
+Ticker: TSLA
+
+Tesla beats earnings expectations.
+Tesla upgraded by Morgan Stanley.
+Tesla announces new AI chip initiative.
+
+This combined string can be sent directly to an LLM for sentiment scoring.
+
+---
+
+End of File
