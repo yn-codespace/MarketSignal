@@ -1,0 +1,6 @@
+[submodule "external/json"]
+	path = external/json
+	url = https://github.com/nlohmann/json.git
+[submodule "external/libxml2"]
+	path = external/libxml2
+	url = https://gitlab.gnome.org/GNOME/libxml2.git
