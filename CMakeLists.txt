@@ -26,12 +26,12 @@ add_subdirectory( ${TEST_DIR} )
 message( STATUS " sources added from ${UTIL_DIR} are ${SRCS_TEST} " )
 
 # Add external subdirectory
-set( EXTENRAL_DIR ${CMAKE_SOURCE_DIR}/external )
+set( EXTERNAL_DIR ${CMAKE_SOURCE_DIR}/external )
 
-set( XML2_DIR ${EXTENRAL_DIR}/tinyxml2 )
+set( XML2_DIR ${EXTERNAL_DIR}/libxml2 )
 set( SRC_XML2 ${XML2_DIR}/tinyxml2.cpp )
 
-set( JSON_DIR ${EXTENRAL_DIR}/json )
+set( JSON_DIR ${EXTERNAL_DIR}/json )
 
 # Add config directory
 set( CONFIG_DIR ${CMAKE_SOURCE_DIR}/config )
