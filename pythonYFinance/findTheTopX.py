@@ -22,9 +22,9 @@ if __name__ == "__main__":
     print(week_columns)
 
     # Setup the loop 
-    top_X = 250
+    top_X = 500
     top_lists = []
-    week_columns_concat = week_columns[:5]
+    week_columns_concat = week_columns[:6]
 
     
     # Find the repeated tickers through set subtraction

@@ -27,6 +27,19 @@ def calc_relative_diffs(filename, ticker, delta_weeks):
         print("No data available for this ticker. Skipping.")
         return deltas
 
+    # Screen for extremely low priced stocks
+    if df["Close"].iloc[-1] < 10:
+        return None
+
+    # Screen for very low trading volumne
+    avg_volume = df["Volume"].tail(30).mean()
+    if avg_volume < 500000:
+        return None
+
+    # Screen for very short lived tickers
+    if len(df) < 252:
+        return None
+    
     df["datetime_col"] = pd.to_datetime(df["Date"], utc=True)
     df = df.set_index("datetime_col").sort_index()
 
@@ -90,19 +103,24 @@ if __name__ == "__main__":
         row = calc_relative_diffs(filename, ticker, delta_weeks)
         
         print(f"i = {i} out of {len_tickers-1}\nrow = {row}")
-
-        data_rows.append(row)
+        
+        # Screen for rows that have no meaning
+        if row is None:
+            print(f"i = {i} out of {len_tickers-1} is none... skipping.")
+        else:
+            print(f"i = {i} out of {len_tickers-1}\nrow = {row}")
+            data_rows.append(row)
 
     # Build the DataFrame
-    stable_growth_df = pd.DataFrame(data_rows)
+    growth_df = pd.DataFrame(data_rows)
 
 
     # Ensure numeric columns are floats
-    for col in stable_growth_df.columns[1:]:
-            stable_growth_df[col] = stable_growth_df[col].astype(float)
+    for col in growth_df.columns[1:]:
+            growth_df[col] = growth_df[col].astype(float)
 
 
-    stable_growth_df.to_csv("stable_growth_df.csv", index=False, float_format="%.2f")
+    growth_df.to_csv("stable_growth_df.csv", index=False, float_format="%.2f")
     
 
 
