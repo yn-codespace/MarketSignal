@@ -287,7 +287,7 @@ void RSSFetcher::callLLMAPI(RSSInputData* task, CURL* curl)
                     LLM_SUCESS = true;
                     
                 } else {
-                    std::cout << "ticker " << task->ticker << "Error: " << parsed_data["error"] << "\nRetrying..." << std::endl;
+                    std::cout << "ticker " << task->ticker << " Error: " << parsed_data["error"] << "\nRetrying..." << std::endl;
                     LLM_SUCESS = false;
                     std::this_thread::sleep_for(std::chrono::milliseconds(30000));
                 }
