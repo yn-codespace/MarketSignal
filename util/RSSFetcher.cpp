@@ -59,7 +59,7 @@ void RSSFetcher::taskManager()
             }
         } // unlock happens here
         
-        if (task) {
+        if (task != nullptr) {
 
             // Iterate through the URLs and gather headlines
             for (int i = 0; i < task->urls.size(); i++) {
@@ -119,6 +119,7 @@ void RSSFetcher::processTask(RSSInputData* task, CURL* curl, int i)
         if(res != CURLE_OK) {
             std::cerr << "curl error: " << curl_easy_strerror(res) << std::endl;
             task->success = false;
+            std::this_thread::sleep_for(std::chrono::milliseconds(5000));
         }
         else {
             // std::cout << buffer << std::endl;  // RSS XML
@@ -138,19 +139,36 @@ void RSSFetcher::processTask(RSSInputData* task, CURL* curl, int i)
 void RSSFetcher::parseRSS(RSSInputData* task)
 {
     
+    if (!task) {
+        std::cerr << "parseRSS: task is null\n";
+        return;
+    }
+
     tinyxml2::XMLDocument doc;
-    if(doc.Parse(task->rssData.c_str()) != tinyxml2::XML_SUCCESS) {
-        std::cerr << "Failed to parse RSS XML\n";
+    tinyxml2::XMLError parseResult = doc.Parse(task->rssData.c_str());
+
+    if (parseResult != tinyxml2::XML_SUCCESS) {
+        std::cerr << "ticker " << task->ticker << " parseRSS: Failed to parse RSS XML, error code: " << parseResult << "\n";
+        task->success = false;
         return;
     }
-    
-    // Get <channel> under <rss>
-    tinyxml2::XMLElement* channel = doc.FirstChildElement("rss")->FirstChildElement("channel");
-    if(!channel) {
-        std::cerr << "No <channel> found\n";
+
+    // Safely get <rss> element
+    tinyxml2::XMLElement* rss = doc.FirstChildElement("rss");
+    if (!rss) {
+        std::cerr << "ticker " << task->ticker << " parseRSS: No <rss> element found\n";
+        task->success = false;
         return;
     }
-    
+
+    // Safely get <channel> element
+    tinyxml2::XMLElement* channel = rss->FirstChildElement("channel");
+    if (!channel) {
+        std::cerr << "ticker " << task->ticker  << " parseRSS: No <channel> element found\n";
+        task->success = false;
+        return;
+    }
+
     // Iterate all <item> elements
     for (tinyxml2::XMLElement* item = channel->FirstChildElement("item"); 
          item != nullptr; 
@@ -269,7 +287,7 @@ void RSSFetcher::callLLMAPI(RSSInputData* task, CURL* curl)
                     LLM_SUCESS = true;
                     
                 } else {
-                    std::cout << "Error: " << parsed_data["error"] << "\nRetrying..." << std::endl;
+                    std::cout << "ticker " << task->ticker << "Error: " << parsed_data["error"] << "\nRetrying..." << std::endl;
                     LLM_SUCESS = false;
                     std::this_thread::sleep_for(std::chrono::milliseconds(30000));
                 }
