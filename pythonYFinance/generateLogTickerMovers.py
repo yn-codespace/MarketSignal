@@ -91,9 +91,9 @@ if __name__ == "__main__":
     num_strides     = int(num_total_days/stride)
     lookback_days   = [stride*(i+1) for i in range(num_strides)]
 
-    for lookback_day_i in lookback_days:
+    for i,lookback_day_i in enumerate(lookback_days):
     
-        for i, ticker in enumerate(tickers[:5]):
+        for j, ticker in enumerate(tickers):
     
             filename    = f"./HistoricData5Years_Finished/{ticker}_stocks_data.csv"
             df          = read_csv(filename)
@@ -103,7 +103,7 @@ if __name__ == "__main__":
             if row is not None:
                 data_rows.append(row)
     
-            print(f"i = {i} out of {len_tickers-1}\nrow = {row}")
+            print(f"i = {i} out of {num_strides} loopback days j = {j} out of {len_tickers-1} \nrow = {row}")
     
         trend_df = pd.DataFrame(data_rows)
     
